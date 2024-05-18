@@ -7,7 +7,6 @@ import mime from 'mime-types';
 config(); // Ensure environment variables are loaded
 
 const API_ENDPOINT = "https://api.shoutbox.net/send";
-// const API_ENDPOINT = "https://httpbin.org/post";
 
 export default class Shoutbox {
   private apiKey: string;
@@ -36,9 +35,9 @@ export default class Shoutbox {
       if (!e.filename) {
         e.filename = basename(e.filepath);
       }
-      // if (!e.contentType) {
-      //   e.contentType = mime.lookup(e.filename) || "application/octet-stream";
-      // }
+      if (!e.contentType) {
+        e.contentType = mime.lookup(e.filename) || "application/octet-stream";
+      }
       if (typeof e.content === "object") {
         e.content = e.content.toString("base64");
       }
