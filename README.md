@@ -106,6 +106,7 @@ The `EmailOptions` interface allows you to customize your email. Below are the p
 - **subject** (string): The subject of the email (required).
 - **html** (string): The HTML content of the email (optional).
 - **text** (string): The plain text content of the email (optional).
+- **react** (React Email Component): A React Email Component which will be converted to a HTML template
 - **attachments** (Attachment[]): An array of attachment objects (optional).
 - **replyTo** (string): The email address for replies (optional).
 - **tags** (Record<string, string>): A record of tags (optional).
