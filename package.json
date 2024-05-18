@@ -1,0 +1,33 @@
+{
+  "name": "shoutboxnet",
+  "version": "1.0.0",
+  "description": "",
+  "private": false,
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "mime-types": "^2.1.35",
+    "node-fetch": "^3.3.2",
+    "typescript": "^5.4.5"
+  },
+  "devDependencies": {
+    "@types/form-data": "^2.5.0",
+    "@types/mime-types": "^2.1.4",
+    "@types/node": "^20.12.12",
+    "@types/node-fetch": "^2.6.11",
+    "tsup": "^8.0.2",
+    "tsx": "^4.10.4"
+  }
+}
