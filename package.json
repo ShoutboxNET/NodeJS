@@ -15,11 +15,12 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "dotenv": "^16.4.5",
     "mime-types": "^2.1.35",
     "node-fetch": "^3.3.2",
+    "react-email": "^2.1.2",
     "typescript": "^5.4.5"
   },
   "devDependencies": {

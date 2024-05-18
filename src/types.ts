@@ -5,6 +5,7 @@ export interface EmailOptions {
   subject: string;
   html?: string;
   text?: string;
+  react?: any; // React component
   attachments?: Attachment[];
   replyTo?: string;
   tags?: Record<string, string>;

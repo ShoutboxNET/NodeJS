@@ -3,6 +3,7 @@ import { EmailOptions, Attachment } from "./types";
 import { basename } from "path";
 import fs from "fs";
 import mime from 'mime-types';
+import { renderAsync } from "@react-email/render";
 
 config(); // Ensure environment variables are loaded
 
@@ -25,6 +26,10 @@ export default class Shoutbox {
         extraHeaders[key] = value
       );
       delete options.headers;
+    }
+
+    if (options.react) {
+      options.html = await renderAsync(options.react);
     }
 
     // Handle attachments
