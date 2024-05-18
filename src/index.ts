@@ -50,8 +50,6 @@ export default class Shoutbox {
       );
     }
 
-    console.log(emailContent); 
-
     try {
       const response = await fetch(API_ENDPOINT, {
         method: "POST",
