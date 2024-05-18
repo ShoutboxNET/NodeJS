@@ -1,7 +1,7 @@
 {
   "name": "shoutboxnet",
   "version": "1.0.0",
-  "description": "",
+  "description": "Shoutbox.net Developer API",
   "private": false,
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
