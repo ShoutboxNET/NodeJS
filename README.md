@@ -4,12 +4,13 @@ Shoutbox.net is a Developer API designed to send transactional emails at scale. 
 
 ## Integration Methods
 
-There are three main ways to integrate with Shoutbox:
+There are four main ways to integrate with Shoutbox:
 
 1. Direct API calls using fetch()
 2. Using our Node.js client
 3. Using SMTP
 4. Next.js integration
+5. React Email Components
 
 ## 1. Direct API Integration (Using fetch)
 
@@ -246,6 +247,92 @@ export default function ContactPage() {
             <input type="email" name="email" required />
             <button type="submit">Send Email</button>
         </form>
+    );
+}
+```
+
+## 5. React Email Components
+
+Shoutbox supports sending emails using React components through integration with @react-email. This allows you to create dynamic, reusable email templates using React's component-based architecture.
+
+### Installation
+
+```bash
+npm install shoutboxnet @react-email/components
+```
+
+### Basic Usage
+
+```tsx
+import React from 'react';
+import Shoutbox from 'shoutboxnet';
+import { Html } from '@react-email/html';
+import { Button } from '@react-email/button';
+import { Text } from '@react-email/text';
+import { Section } from '@react-email/section';
+import { Container } from '@react-email/container';
+
+interface WelcomeEmailProps {
+    url: string;
+    name: string;
+}
+
+function WelcomeEmail({ url, name }: WelcomeEmailProps) {
+    return (
+        <Html>
+            <Section style={{ backgroundColor: '#ffffff' }}>
+                <Container>
+                    <Text>Hello {name}!</Text>
+                    <Text>Welcome to our platform. Please verify your email:</Text>
+                    <Button href={url}>Verify Email</Button>
+                </Container>
+            </Section>
+        </Html>
+    );
+}
+
+const client = new Shoutbox('your-api-key');
+
+await client.sendEmail({
+    from: "welcome@example.com",
+    to: "user@example.com",
+    subject: "Welcome to Our Platform",
+    react: <WelcomeEmail url="https://example.com/verify" name="John" />
+});
+```
+
+### Available Components
+
+Shoutbox supports all @react-email components including:
+- `<Html>`: Root component for email templates
+- `<Button>`: Styled button component
+- `<Text>`: Text component with email-safe styling
+- `<Section>`: Section container for layout
+- `<Container>`: Centered container with max-width
+- And many more from the @react-email library
+
+### Dynamic Content
+
+React components can include dynamic content through props, conditional rendering, and loops:
+
+```tsx
+interface EmailProps {
+    user: {
+        name: string;
+        items: string[];
+    };
+}
+
+function OrderConfirmation({ user }: EmailProps) {
+    return (
+        <Html>
+            <Section>
+                <Text>Thank you for your order, {user.name}!</Text>
+                {user.items.map((item, index) => (
+                    <Text key={index}>- {item}</Text>
+                ))}
+            </Section>
+        </Html>
     );
 }
 ```

@@ -27,11 +27,13 @@ install:
 update:
 	npm update
 
-# Build the projectbuild:
+# Build the project
+build:
 	npm run build
 
 test:
-	npm test -- --testPathIgnorePatterns=react.test.tsx
+	npm test -- 
+	#--testPathIgnorePatterns=react.test.tsx
 
 test-react:
 	tsx src/__tests__/react.test.tsx
@@ -39,8 +41,8 @@ test-react:
 test-all: test test-react
 
 # Run tests (requires environment variables)
-test: check-env
-	npm test
+# test: check-env
+# 	npm test
 
 # Run direct API example
 run-direct-example: check-env
@@ -72,7 +74,7 @@ run-text-example: check-env
 
 # Clean up
 clean:
-	rm -rf node_modules/
+	#rm -rf node_modules/
 	rm -rf dist/
 	rm -f package-lock.json
 

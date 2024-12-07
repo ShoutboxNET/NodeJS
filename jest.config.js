@@ -1,5 +1,5 @@
-/** @type {import('ts-jest').JestConfigWithTsJest} */
-module.exports = {
+// jest.config.js
+export default {
   preset: "ts-jest",
   testEnvironment: "node",
   roots: ["<rootDir>/src"],
@@ -11,6 +11,7 @@ module.exports = {
     "^.+\\.(ts|tsx)$": [
       "ts-jest",
       {
+        useESM: true,
         tsconfig: {
           jsx: "react",
           esModuleInterop: true,
@@ -20,6 +21,8 @@ module.exports = {
   },
   moduleNameMapper: {
     "^@react-email/(.*)$": "@react-email/$1",
+    "^(\\.{1,2}/.*)\\.js$": "$1",
+    "^(\\.{1,2}/.*)\\.ts$": "$1",
   },
   collectCoverage: true,
   coverageDirectory: "coverage",
@@ -29,4 +32,6 @@ module.exports = {
   extensionsToTreatAsEsm: [".ts", ".tsx"],
   moduleFileExtensions: ["ts", "tsx", "js", "jsx", "json", "node"],
   transformIgnorePatterns: ["node_modules/(?!(@react-email)/)"],
+  moduleDirectories: ["node_modules", "src"],
+  testPathIgnorePatterns: ["<rootDir>/node_modules/", "<rootDir>/dist/"],
 };

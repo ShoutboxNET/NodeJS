@@ -26,6 +26,16 @@ export default class Shoutbox {
     this.apiKey = key;
   }
 
+  private cleanRenderedHtml(html: string): string {
+    // Remove DOCTYPE, html envelope tags, and the $ /$ markers
+    return html
+      .replace(/<!DOCTYPE[^>]*>/i, '')
+      .replace(/<\/?html[^>]*>/gi, '')
+      .replace(/\$<|>\$\//g, '<')  // Replace $< and >$/ with just <
+      .replace(/\$|\/\$/g, '')     // Remove any remaining $ and /$ markers
+      .trim();
+  }
+
   private async send(options: EmailOptions): Promise<void> {
     let extraHeaders: Record<string, string> = {};
     if (options.headers) {
@@ -36,7 +46,8 @@ export default class Shoutbox {
     }
 
     if (options.react) {
-      options.html = await render(options.react);
+      const renderedHtml = await render(options.react);
+      options.html = this.cleanRenderedHtml(renderedHtml);
     }
 
     // Handle attachments

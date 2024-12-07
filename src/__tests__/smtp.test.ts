@@ -1,6 +1,14 @@
 import { SMTPClient } from "../smtp";
 import { config } from "dotenv";
 import path from "path";
+import { jest } from "@jest/globals"; 
+import { describe, test, expect, beforeAll } from "@jest/globals"; 
+import { fileURLToPath } from "url";
+import { dirname } from "path";
+
+// Set up globals
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 config(); // Load environment variables
 
@@ -136,4 +144,3 @@ describe("SMTPClient", () => {
     expect(true).toBe(true);
   });
 });
-export {};

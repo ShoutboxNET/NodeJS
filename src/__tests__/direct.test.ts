@@ -1,4 +1,6 @@
 import { config } from "dotenv";
+import { jest } from "@jest/globals";
+import { describe, test, expect, beforeAll } from "@jest/globals"; 
 
 config(); // Load environment variables
 

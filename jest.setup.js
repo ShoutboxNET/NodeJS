@@ -1,7 +1,10 @@
-// Make fetch available in Node.js for tests
-if (!globalThis.fetch) {
-    globalThis.fetch = require('node-fetch');
-}
+// jest.setup.js
+import { config } from "dotenv";
+// import { fileURLToPath } from "url";
+// import { dirname } from "path";
 
-// Load environment variables for tests
-require('dotenv').config();
+// // Set up globals
+// global.__filename = fileURLToPath(import.meta.url);
+// global.__dirname = dirname(global.__filename);
+
+config();

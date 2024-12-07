@@ -1,0 +1,376 @@
+# React Email Integration (JavaScript)
+
+This guide covers how to use React components to create and send emails using Shoutbox in JavaScript.
+
+## Installation
+
+```bash
+npm install shoutboxnet @react-email/components
+```
+
+## Basic Usage
+
+The simplest way to create and send a React email:
+
+```jsx
+import React from 'react';
+import Shoutbox from 'shoutboxnet';
+import { Html } from '@react-email/html';
+import { Text } from '@react-email/text';
+
+function SimpleEmail() {
+  return (
+    <Html>
+      <Text>Hello from React Email!</Text>
+    </Html>
+  );
+}
+
+const client = new Shoutbox('your-api-key');
+
+await client.sendEmail({
+  from: "sender@example.com",
+  to: "recipient@example.com",
+  subject: "Simple React Email",
+  react: <SimpleEmail />
+});
+```
+
+## Component Library
+
+Shoutbox integrates with @react-email components to provide email-safe, styled elements:
+
+### Available Components
+
+```jsx
+import {
+  Html,
+  Button,
+  Text,
+  Section,
+  Container,
+  Link,
+  Image,
+  Hr,
+  Preview
+} from '@react-email/components';
+```
+
+### Component Examples
+
+1. **Button Component**
+```jsx
+<Button 
+  href="https://example.com"
+  style={{ background: '#000', color: '#fff', padding: '12px 20px' }}
+>
+  Click me
+</Button>
+```
+
+2. **Container with Sections**
+```jsx
+<Container>
+  <Section style={{ backgroundColor: '#f6f6f6' }}>
+    <Text>Section 1 content</Text>
+  </Section>
+  <Section style={{ backgroundColor: '#ffffff' }}>
+    <Text>Section 2 content</Text>
+  </Section>
+</Container>
+```
+
+3. **Images and Links**
+```jsx
+<Section>
+  <Image
+    src="https://example.com/logo.png"
+    alt="Logo"
+    width={200}
+    height={50}
+  />
+  <Link href="https://example.com">Visit our website</Link>
+</Section>
+```
+
+## Dynamic Content
+
+### Props and Data
+
+Create reusable email templates with dynamic content:
+
+```jsx
+function WelcomeEmail({ username, verifyUrl }) {
+  return (
+    <Html>
+      <Container>
+        <Text>Welcome {username}!</Text>
+        <Button href={verifyUrl}>
+          Verify Email
+        </Button>
+      </Container>
+    </Html>
+  );
+}
+
+// Send email with dynamic content
+await client.sendEmail({
+  from: "welcome@example.com",
+  to: "user@example.com",
+  subject: "Welcome!",
+  react: <WelcomeEmail 
+    username="John"
+    verifyUrl="https://example.com/verify"
+  />
+});
+```
+
+### Conditional Rendering
+
+Use JavaScript conditions to show/hide content:
+
+```jsx
+function OrderEmail({ order, isPremium }) {
+  return (
+    <Html>
+      <Container>
+        <Text>Order #{order.id} Confirmation</Text>
+        
+        {isPremium && (
+          <Section style={{ backgroundColor: '#gold' }}>
+            <Text>Premium Customer Bonus!</Text>
+          </Section>
+        )}
+
+        {order.items.map(item => (
+          <Section key={item.id}>
+            <Text>{item.name} - ${item.price}</Text>
+          </Section>
+        ))}
+      </Container>
+    </Html>
+  );
+}
+```
+
+## Styling
+
+### Inline Styles
+
+Use inline styles for maximum email client compatibility:
+
+```jsx
+function StyledEmail() {
+  return (
+    <Html>
+      <Section style={{
+        backgroundColor: '#ffffff',
+        padding: '20px',
+        fontFamily: 'Arial, sans-serif'
+      }}>
+        <Text style={{
+          fontSize: '18px',
+          color: '#333333',
+          lineHeight: '1.5'
+        }}>
+          Styled content here
+        </Text>
+      </Section>
+    </Html>
+  );
+}
+```
+
+### Style Best Practices
+
+1. Always use inline styles instead of external stylesheets
+2. Use web-safe fonts
+3. Keep layouts simple and table-based
+4. Test across different email clients
+
+## Advanced Usage
+
+### Preview Text
+
+Add preview text that appears in email clients:
+
+```jsx
+function EmailWithPreview() {
+  return (
+    <Html>
+      <Preview>Special offer inside!</Preview>
+      <Container>
+        <Text>Email content here...</Text>
+      </Container>
+    </Html>
+  );
+}
+```
+
+### Complex Layouts
+
+Create sophisticated email layouts:
+
+```jsx
+function NewsletterEmail({ articles }) {
+  return (
+    <Html>
+      <Container>
+        <Section style={{ textAlign: 'center' }}>
+          <Image
+            src="header-image.jpg"
+            width={600}
+            height={200}
+            alt="Newsletter Header"
+          />
+        </Section>
+
+        {articles.map((article, index) => (
+          <Section 
+            key={index}
+            style={{
+              padding: '20px',
+              marginBottom: '20px',
+              borderBottom: '1px solid #eee'
+            }}
+          >
+            <Text style={{ fontSize: '24px' }}>{article.title}</Text>
+            <Text>{article.excerpt}</Text>
+            <Button href={article.url}>Read More</Button>
+          </Section>
+        ))}
+
+        <Hr />
+        
+        <Section style={{ textAlign: 'center', color: '#666' }}>
+          <Text>
+            © 2024 Your Company. All rights reserved.
+          </Text>
+        </Section>
+      </Container>
+    </Html>
+  );
+}
+```
+
+## Testing
+
+### Manual Testing
+
+Test your React email components by sending test emails:
+
+```jsx
+// Development environment
+if (process.env.NODE_ENV === 'development') {
+  await client.sendEmail({
+    from: "test@example.com",
+    to: "developer@example.com",
+    subject: "[TEST] Email Template",
+    react: <YourEmailComponent testData={...} />
+  });
+}
+```
+
+### Automated Testing
+
+Use Jest and React Testing Library to test your email components:
+
+```jsx
+import { render } from '@react-email/render';
+import WelcomeEmail from './WelcomeEmail';
+
+describe('WelcomeEmail', () => {
+  it('renders correctly', () => {
+    const html = render(
+      <WelcomeEmail 
+        username="Test User"
+        verifyUrl="https://test.com/verify"
+      />
+    );
+    
+    expect(html).toContain('Test User');
+    expect(html).toContain('https://test.com/verify');
+  });
+});
+```
+
+## Best Practices
+
+1. **Component Organization**
+   - Keep email components in a dedicated directory
+   - Create reusable components for common elements
+   - Use clear, descriptive component names
+
+2. **Props Validation**
+   - Document expected props
+   - Provide default values where appropriate
+   - Use prop-types for runtime checking
+
+3. **Error Handling**
+   - Implement fallbacks for missing data
+   - Handle loading states gracefully
+   - Provide meaningful error messages
+
+4. **Performance**
+   - Keep components simple
+   - Minimize nested elements
+   - Avoid unnecessary re-renders
+
+5. **Maintenance**
+   - Comment complex logic
+   - Version your email templates
+   - Document any email client-specific workarounds
+
+## Common Issues and Solutions
+
+### Images Not Loading
+
+Always use absolute URLs for images:
+
+```jsx
+// Good
+<Image src="https://cdn.example.com/images/logo.png" />
+
+// Bad
+<Image src="/images/logo.png" />
+```
+
+### Style Inconsistencies
+
+Use table-based layouts for consistent rendering:
+
+```jsx
+function ConsistentEmail() {
+  return (
+    <Html>
+      <Section style={{ width: '100%' }}>
+        <Container style={{ maxWidth: '600px', margin: '0 auto' }}>
+          <Text>Your content here</Text>
+        </Container>
+      </Section>
+    </Html>
+  );
+}
+```
+
+### Mobile Responsiveness
+
+Use mobile-friendly dimensions and styling:
+
+```jsx
+function ResponsiveEmail() {
+  return (
+    <Html>
+      <Container style={{ 
+        width: '100%',
+        maxWidth: '600px'
+      }}>
+        <Image
+          src="hero.jpg"
+          width="100%"
+          style={{ maxWidth: '600px' }}
+        />
+      </Container>
+    </Html>
+  );
+}

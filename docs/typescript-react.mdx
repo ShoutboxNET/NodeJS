@@ -1,0 +1,444 @@
+# React Email Integration (TypeScript)
+
+This guide covers how to use React components with TypeScript to create and send emails using Shoutbox.
+
+## Installation
+
+```bash
+npm install shoutboxnet @react-email/components
+```
+
+## Type Definitions
+
+### Basic Component Types
+
+```typescript
+import React from 'react';
+import { Html } from '@react-email/html';
+import { Text } from '@react-email/text';
+
+// Define prop types for your email components
+interface EmailProps {
+  username: string;
+  verifyUrl: string;
+}
+
+// Use React.FC with prop interface
+const WelcomeEmail: React.FC<EmailProps> = ({ username, verifyUrl }) => {
+  return (
+    <Html>
+      <Text>Welcome {username}!</Text>
+      <Text>Click here to verify: {verifyUrl}</Text>
+    </Html>
+  );
+};
+```
+
+### Shoutbox Client Types
+
+```typescript
+import Shoutbox from 'shoutboxnet';
+
+// Initialize client with type checking
+const client = new Shoutbox(process.env.SHOUTBOX_API_KEY as string);
+
+// SendEmailOptions type includes react property
+interface SendEmailOptions {
+  from: string;
+  to: string;
+  subject: string;
+  react: React.ReactElement;
+}
+
+// Type-safe email sending
+await client.sendEmail({
+  from: "welcome@example.com",
+  to: "user@example.com",
+  subject: "Welcome!",
+  react: <WelcomeEmail 
+    username="John"
+    verifyUrl="https://example.com/verify"
+  />
+});
+```
+
+## Component Examples
+
+### Basic Email Component
+
+```typescript
+import React from 'react';
+import { Html } from '@react-email/html';
+import { Button } from '@react-email/button';
+import { Text } from '@react-email/text';
+import { Section } from '@react-email/section';
+import { Container } from '@react-email/container';
+
+interface WelcomeEmailProps {
+  name: string;
+  url: string;
+}
+
+const WelcomeEmail: React.FC<WelcomeEmailProps> = ({ name, url }) => {
+  return (
+    <Html>
+      <Section style={{ backgroundColor: '#ffffff' }}>
+        <Container>
+          <Text>Hello {name}!</Text>
+          <Text>Welcome to our platform. Please verify your email:</Text>
+          <Button href={url}>Verify Email</Button>
+        </Container>
+      </Section>
+    </Html>
+  );
+};
+
+export default WelcomeEmail;
+```
+
+### Complex Data Structures
+
+```typescript
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+}
+
+interface OrderEmailProps {
+  orderNumber: string;
+  customer: {
+    name: string;
+    email: string;
+  };
+  products: Product[];
+  total: number;
+}
+
+const OrderConfirmation: React.FC<OrderEmailProps> = ({
+  orderNumber,
+  customer,
+  products,
+  total
+}) => {
+  return (
+    <Html>
+      <Container>
+        <Text>Order Confirmation #{orderNumber}</Text>
+        <Text>Thank you for your order, {customer.name}!</Text>
+        
+        <Section>
+          {products.map((product) => (
+            <Text key={product.id}>
+              {product.name} x{product.quantity} - ${product.price * product.quantity}
+            </Text>
+          ))}
+        </Section>
+
+        <Text>Total: ${total}</Text>
+      </Container>
+    </Html>
+  );
+};
+```
+
+## Styling with TypeScript
+
+### Style Types
+
+```typescript
+import { CSSProperties } from 'react';
+
+// Define reusable style types
+interface EmailStyles {
+  container: CSSProperties;
+  header: CSSProperties;
+  body: CSSProperties;
+  footer: CSSProperties;
+}
+
+const styles: EmailStyles = {
+  container: {
+    maxWidth: '600px',
+    margin: '0 auto',
+    fontFamily: 'Arial, sans-serif',
+  },
+  header: {
+    backgroundColor: '#f8f9fa',
+    padding: '20px',
+    textAlign: 'center',
+  },
+  body: {
+    padding: '20px',
+    backgroundColor: '#ffffff',
+  },
+  footer: {
+    padding: '20px',
+    textAlign: 'center',
+    color: '#6c757d',
+  },
+};
+
+const StyledEmail: React.FC = () => {
+  return (
+    <Html>
+      <Container style={styles.container}>
+        <Section style={styles.header}>
+          <Text>Header Content</Text>
+        </Section>
+        <Section style={styles.body}>
+          <Text>Body Content</Text>
+        </Section>
+        <Section style={styles.footer}>
+          <Text>Footer Content</Text>
+        </Section>
+      </Container>
+    </Html>
+  );
+};
+```
+
+## Advanced Usage
+
+### Generic Components
+
+```typescript
+interface BaseEmailProps<T> {
+  data: T;
+  template: 'welcome' | 'order' | 'reset';
+}
+
+const EmailTemplate = <T extends Record<string, unknown>>({
+  data,
+  template
+}: BaseEmailProps<T>) => {
+  switch (template) {
+    case 'welcome':
+      return <WelcomeEmail {...(data as WelcomeEmailProps)} />;
+    case 'order':
+      return <OrderConfirmation {...(data as OrderEmailProps)} />;
+    case 'reset':
+      return <PasswordReset {...(data as PasswordResetProps)} />;
+    default:
+      throw new Error(`Unknown template: ${template}`);
+  }
+};
+```
+
+### Utility Types
+
+```typescript
+// Reusable email component props
+type BaseEmailProps = {
+  subject: string;
+  previewText?: string;
+};
+
+// Extend base props for specific email types
+type WelcomeEmailProps = BaseEmailProps & {
+  username: string;
+  verificationUrl: string;
+};
+
+type OrderEmailProps = BaseEmailProps & {
+  orderDetails: {
+    id: string;
+    items: Array<{
+      name: string;
+      quantity: number;
+      price: number;
+    }>;
+  };
+};
+
+// Type guard for email props
+function isWelcomeEmail(props: BaseEmailProps): props is WelcomeEmailProps {
+  return 'username' in props && 'verificationUrl' in props;
+}
+```
+
+## Testing with TypeScript
+
+### Component Testing
+
+```typescript
+import { render } from '@react-email/render';
+import { describe, it, expect } from '@jest/globals';
+import WelcomeEmail from './WelcomeEmail';
+
+describe('WelcomeEmail', () => {
+  const props: WelcomeEmailProps = {
+    username: 'Test User',
+    verifyUrl: 'https://example.com/verify',
+  };
+
+  it('renders with correct props', () => {
+    const html = render(<WelcomeEmail {...props} />);
+    expect(html).toContain(props.username);
+    expect(html).toContain(props.verifyUrl);
+  });
+});
+```
+
+### Mock Types for Testing
+
+```typescript
+// Mock data types
+interface MockUser {
+  id: string;
+  name: string;
+  email: string;
+}
+
+interface MockOrder {
+  id: string;
+  userId: string;
+  items: Array<{
+    id: string;
+    name: string;
+    price: number;
+  }>;
+}
+
+// Test utilities
+const createMockUser = (overrides?: Partial<MockUser>): MockUser => ({
+  id: 'user-1',
+  name: 'Test User',
+  email: 'test@example.com',
+  ...overrides,
+});
+
+const createMockOrder = (overrides?: Partial<MockOrder>): MockOrder => ({
+  id: 'order-1',
+  userId: 'user-1',
+  items: [
+    { id: 'item-1', name: 'Test Item', price: 10 },
+  ],
+  ...overrides,
+});
+
+// Test component with mock data
+describe('OrderEmail', () => {
+  it('renders order details correctly', () => {
+    const mockUser = createMockUser();
+    const mockOrder = createMockOrder();
+
+    const html = render(
+      <OrderEmail 
+        customer={mockUser}
+        order={mockOrder}
+      />
+    );
+
+    expect(html).toContain(mockUser.name);
+    expect(html).toContain(mockOrder.id);
+  });
+});
+```
+
+## Error Handling
+
+### Type-Safe Error Handling
+
+```typescript
+interface EmailError {
+  code: string;
+  message: string;
+  details?: Record<string, unknown>;
+}
+
+const sendEmailWithErrorHandling = async (
+  client: Shoutbox,
+  options: SendEmailOptions
+): Promise<void> => {
+  try {
+    await client.sendEmail(options);
+  } catch (error) {
+    const emailError = error as EmailError;
+    console.error(
+      `Failed to send email: ${emailError.code} - ${emailError.message}`,
+      emailError.details
+    );
+    throw error;
+  }
+};
+```
+
+## Best Practices
+
+1. **Type Safety**
+   - Always define prop interfaces
+   - Use strict TypeScript configuration
+   - Leverage type guards for runtime checks
+
+2. **Component Organization**
+   - Keep types and interfaces in separate files
+   - Use barrel exports for clean imports
+   - Maintain consistent naming conventions
+
+3. **Error Handling**
+   - Define custom error types
+   - Use type guards for error checking
+   - Provide meaningful error messages
+
+4. **Testing**
+   - Create type-safe mock data
+   - Test with various prop combinations
+   - Verify type compatibility
+
+5. **Documentation**
+   - Document complex types
+   - Include usage examples
+   - Maintain up-to-date type definitions
+
+## Common Issues and Solutions
+
+### Type Inference with Dynamic Content
+
+```typescript
+interface DynamicContentProps<T> {
+  data: T;
+  render: (item: T) => React.ReactNode;
+}
+
+const DynamicContent = <T,>({ data, render }: DynamicContentProps<T>) => {
+  return <>{render(data)}</>;
+};
+
+// Usage
+const NumberContent = () => (
+  <DynamicContent
+    data={42}
+    render={(num) => <Text>Number: {num}</Text>}
+  />
+);
+```
+
+### Conditional Rendering with Types
+
+```typescript
+interface ConditionalProps {
+  condition: boolean;
+  children: React.ReactNode;
+  fallback?: React.ReactNode;
+}
+
+const Conditional: React.FC<ConditionalProps> = ({
+  condition,
+  children,
+  fallback = null,
+}) => {
+  return <>{condition ? children : fallback}</>;
+};
+
+// Usage
+const EmailWithConditions: React.FC<{ isPremium: boolean }> = ({ isPremium }) => (
+  <Html>
+    <Container>
+      <Conditional condition={isPremium}>
+        <Text>Premium Content</Text>
+      </Conditional>
+    </Container>
+  </Html>
+);
