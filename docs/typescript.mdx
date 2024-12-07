@@ -1,0 +1,223 @@
+---
+title: "TypeScript Guide"
+description: "Complete guide for using Shoutbox with TypeScript"
+---
+
+# TypeScript Guide
+
+This guide provides an overview of using Shoutbox with TypeScript, covering all integration methods and best practices.
+
+## Integration Methods
+
+Shoutbox provides multiple ways to send emails from your TypeScript applications:
+
+1. [Direct API Integration](./typescript-overview.mdx)
+2. [Client Library](./typescript-lib.mdx)
+3. [SMTP Integration](./typescript-smtp.mdx)
+4. [Next.js Integration](./typescript-nextjs.mdx)
+
+## Type Definitions
+
+### Core Types
+
+```typescript
+interface EmailOptions {
+    from: string;
+    to: string | string[];
+    subject: string;
+    html?: string;
+    text?: string;
+    react?: React.ReactElement;
+    name?: string;
+    replyTo?: string;
+    attachments?: Attachment[];
+    headers?: Record<string, string>;
+    cc?: string | string[];
+}
+
+interface Attachment {
+    filename?: string;
+    filepath: string;
+    contentType?: string;
+    content?: string | Buffer;
+}
+```
+
+### Client Options
+
+```typescript
+interface ClientOptions {
+    baseURL?: string;
+    timeout?: number;
+}
+```
+
+## Best Practices
+
+### Type Safety
+
+Always use TypeScript's type system to catch errors early:
+
+```typescript
+import Shoutbox, { EmailOptions, Attachment } from 'shoutboxnet';
+
+// Type-safe email options
+const emailOptions: EmailOptions = {
+    from: 'sender@example.com',
+    to: 'recipient@example.com',
+    subject: 'Test Email',
+    html: '<h1>Hello</h1>'
+};
+
+// Type-safe attachment
+const attachment: Attachment = {
+    filepath: './document.pdf',
+    filename: 'report.pdf',
+    contentType: 'application/pdf'
+};
+```
+
+### Error Handling
+
+Use TypeScript's error handling capabilities:
+
+```typescript
+import Shoutbox, { EmailOptions } from 'shoutboxnet';
+
+async function sendEmailSafely(options: EmailOptions): Promise<void> {
+    try {
+        const client = new Shoutbox(process.env.SHOUTBOX_API_KEY!);
+        await client.sendEmail(options);
+    } catch (error) {
+        if (error instanceof Error) {
+            console.error('Error sending email:', error.message);
+        }
+        throw error;
+    }
+}
+```
+
+### Environment Variables
+
+Type-safe environment variable handling:
+
+```typescript
+// env.d.ts
+declare namespace NodeJS {
+    interface ProcessEnv {
+        SHOUTBOX_API_KEY: string;
+        NODE_ENV: 'development' | 'production' | 'test';
+    }
+}
+
+// Usage
+import { config } from 'dotenv';
+import Shoutbox from 'shoutboxnet';
+
+config();
+
+if (!process.env.SHOUTBOX_API_KEY) {
+    throw new Error('SHOUTBOX_API_KEY is required');
+}
+
+const client = new Shoutbox(process.env.SHOUTBOX_API_KEY);
+```
+
+### Utility Functions
+
+Create type-safe utility functions:
+
+```typescript
+import { EmailOptions } from 'shoutboxnet';
+
+function validateEmail(email: string): boolean {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+}
+
+function createEmailOptions(
+    to: string | string[],
+    subject: string,
+    content: string
+): EmailOptions {
+    return {
+        from: process.env.DEFAULT_FROM_EMAIL!,
+        to,
+        subject,
+        html: content,
+        headers: {
+            'X-Environment': process.env.NODE_ENV
+        }
+    };
+}
+```
+
+### Custom Types
+
+Define custom types for your specific needs:
+
+```typescript
+type EmailTemplate = 'welcome' | 'reset-password' | 'notification';
+
+interface TemplatedEmailOptions extends Omit<EmailOptions, 'html' | 'subject'> {
+    template: EmailTemplate;
+    data: Record<string, unknown>;
+}
+
+async function sendTemplatedEmail(options: TemplatedEmailOptions): Promise<void> {
+    const templates: Record<EmailTemplate, {
+        subject: string;
+        html: string;
+    }> = {
+        'welcome': {
+            subject: 'Welcome to our platform',
+            html: '<h1>Welcome!</h1>'
+        },
+        'reset-password': {
+            subject: 'Reset your password',
+            html: '<h1>Reset Password</h1>'
+        },
+        'notification': {
+            subject: 'New notification',
+            html: '<h1>Notification</h1>'
+        }
+    };
+
+    const template = templates[options.template];
+    const client = new Shoutbox(process.env.SHOUTBOX_API_KEY!);
+
+    await client.sendEmail({
+        ...options,
+        subject: template.subject,
+        html: template.html
+    });
+}
+```
+
+## Integration Methods
+
+### Direct API
+
+See [TypeScript Overview](./typescript-overview.mdx) for direct API integration.
+
+### Client Library
+
+See [TypeScript Library Usage](./typescript-lib.mdx) for client library integration.
+
+### SMTP
+
+See [TypeScript SMTP Usage](./typescript-smtp.mdx) for SMTP integration.
+
+### Next.js
+
+See [Next.js Integration](./typescript-nextjs.mdx) for Next.js setup and usage.
+
+## Rate Limits
+
+<Warning>
+Please contact support for information about rate limits for your API key.
+</Warning>
+
+## Support
+
+For additional support or questions, please contact our support team.

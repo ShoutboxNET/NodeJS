@@ -1,0 +1,353 @@
+---
+title: "JavaScript Overview"
+description: "Simple, powerful email sending API with JavaScript client library"
+---
+
+# Email API JavaScript Client
+
+Simple, powerful email sending API with support for attachments, custom headers, and easy integration.
+
+## Integration Methods
+
+Shoutbox.net provides multiple ways to send emails from your JavaScript applications:
+
+1. Direct API calls using fetch
+2. Using our JavaScript client library
+3. Using SMTP
+
+## Installation
+
+```bash
+npm install shoutboxnet
+# or
+yarn add shoutboxnet
+# or
+pnpm add shoutboxnet
+```
+
+## Quick Start with Direct API
+
+```javascript
+async function sendEmail() {
+    const data = {
+        from: "sender@yourdomain.com",
+        to: "recipient@example.com",
+        subject: "Hello World",
+        html: "<h1>Welcome!</h1>"
+    };
+
+    try {
+        const response = await fetch('https://api.shoutbox.net/send', {
+            method: 'POST',
+            headers: {
+                'Authorization': 'Bearer YOUR_API_KEY',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+    } catch (error) {
+        console.error('Error sending email:', error);
+        throw error;
+    }
+}
+```
+
+## Client Class Setup
+
+Create a reusable client class:
+
+```javascript
+class ShoutboxClient {
+    constructor(apiKey, options = {}) {
+        this.apiKey = apiKey;
+        this.baseURL = options.baseURL || 'https://api.shoutbox.net';
+        this.timeout = options.timeout || 10000;
+    }
+
+    async sendEmail(emailRequest) {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+
+        try {
+            const response = await fetch(`${this.baseURL}/send`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${this.apiKey}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(emailRequest),
+                signal: controller.signal
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            return await response.json();
+        } catch (error) {
+            if (error.name === 'AbortError') {
+                throw new Error('Request timed out');
+            }
+            throw error;
+        } finally {
+            clearTimeout(timeoutId);
+        }
+    }
+}
+```
+
+## Basic Request Structure
+
+| Field      | Type   | Required | Description                 |
+| ---------- | ------ | -------- | --------------------------- |
+| `from`     | string | Yes      | Sender email address        |
+| `to`       | string | Yes      | Recipient email address(es) |
+| `subject`  | string | Yes      | Email subject line          |
+| `html`     | string | No       | HTML content of the email   |
+| `text`     | string | No       | Plain text content          |
+| `name`     | string | No       | Sender name                 |
+| `replyTo`  | string | No       | Reply-to email address      |
+
+## Recipients
+
+### Multiple Recipients
+
+```javascript
+const client = new ShoutboxClient(process.env.SHOUTBOX_API_KEY);
+
+const request = {
+    from: "no-reply@yourdomain.com",
+    to: "user1@example.com,user2@example.com",
+    subject: "Team Update",
+    html: "<h1>Important Announcement</h1>"
+};
+
+try {
+    await client.sendEmail(request);
+} catch (error) {
+    console.error('Failed to send email:', error);
+}
+```
+
+### Named Recipients
+
+```javascript
+const request = {
+    from: "no-reply@yourdomain.com",
+    to: "John Doe <john@example.com>,Jane Smith <jane@example.com>",
+    subject: "Team Meeting",
+    html: "<h1>Meeting Invitation</h1>"
+};
+
+try {
+    await client.sendEmail(request);
+} catch (error) {
+    console.error('Failed to send email:', error);
+}
+```
+
+## Attachments
+
+### Helper Functions for Attachments
+
+```javascript
+class Attachment {
+    /**
+     * Create an attachment from a File or Blob
+     * @param {File|Blob} file - The file to attach
+     * @returns {Promise<Attachment>}
+     */
+    static async fromFile(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+                const base64Content = reader.result.split(',')[1];
+                resolve({
+                    content: base64Content,
+                    filename: file.name
+                });
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+    }
+
+    /**
+     * Create an attachment from a base64 string
+     * @param {string} base64Content - Base64 encoded content
+     * @param {string} filename - Name of the file
+     * @returns {Object} Attachment object
+     */
+    static fromBase64(base64Content, filename) {
+        return {
+            content: base64Content,
+            filename: filename
+        };
+    }
+}
+```
+
+### Complete Example with Attachments
+
+```javascript
+// Browser example with file input
+async function sendEmailWithAttachments(files) {
+    const attachments = [];
+    
+    for (const file of files) {
+        const attachment = await Attachment.fromFile(file);
+        attachments.push(attachment);
+    }
+
+    const request = {
+        from: "reports@yourdomain.com",
+        name: "Reports Team",
+        to: "John Smith <john@example.com>",
+        subject: "Monthly Report - January 2024",
+        html: "<h1>Monthly Report</h1><p>Please find your report attached.</p>",
+        attachments: attachments
+    };
+
+    try {
+        await client.sendEmail(request);
+        console.log('Email sent successfully');
+    } catch (error) {
+        console.error('Failed to send email:', error);
+    }
+}
+
+// Usage with file input
+document.querySelector('input[type="file"]')
+    .addEventListener('change', (e) => {
+        sendEmailWithAttachments(e.target.files);
+    });
+```
+
+## Security Best Practices
+
+### API Key Management
+
+Use environment variables for API keys:
+
+```javascript
+// Node.js
+const apiKey = process.env.SHOUTBOX_API_KEY;
+if (!apiKey) {
+    throw new Error('SHOUTBOX_API_KEY environment variable is not set');
+}
+
+// Browser (use server-side proxy)
+class SecureShoutboxClient {
+    async sendEmail(request) {
+        const response = await fetch('/api/send-email', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(request)
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to send email');
+        }
+        
+        return response.json();
+    }
+}
+```
+
+### Error Handling with Retries
+
+```javascript
+class RetryableShoutboxClient extends ShoutboxClient {
+    async sendEmailWithRetry(request, maxRetries = 3, delay = 1000) {
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                return await this.sendEmail(request);
+            } catch (error) {
+                if (attempt === maxRetries) throw error;
+                
+                if (error.name === 'AbortError' || 
+                    error.message.includes('network error')) {
+                    await new Promise(resolve => setTimeout(resolve, delay * attempt));
+                    continue;
+                }
+                
+                throw error;
+            }
+        }
+    }
+}
+```
+
+### Rate Limiting
+
+```javascript
+class RateLimitedClient extends ShoutboxClient {
+    constructor(apiKey, options = {}) {
+        super(apiKey, options);
+        this.rateLimit = options.rateLimit || 10; // requests per second
+        this.queue = [];
+        this.processing = false;
+    }
+
+    async sendEmail(request) {
+        return new Promise((resolve, reject) => {
+            this.queue.push({ request, resolve, reject });
+            this.processQueue();
+        });
+    }
+
+    async processQueue() {
+        if (this.processing || this.queue.length === 0) return;
+        
+        this.processing = true;
+        const { request, resolve, reject } = this.queue.shift();
+        
+        try {
+            const result = await super.sendEmail(request);
+            resolve(result);
+        } catch (error) {
+            reject(error);
+        } finally {
+            this.processing = false;
+            setTimeout(() => this.processQueue(), 1000 / this.rateLimit);
+        }
+    }
+}
+```
+
+### Email Validation
+
+```javascript
+function validateEmail(email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+}
+
+function validateEmailWithName(email) {
+    // Matches "Name <email@domain.com>" or "email@domain.com"
+    const emailWithNameRegex = /^(?:"?([^"]*)"?\s)?(?:<)?([^\s@]+@[^\s@]+\.[^\s@]+)(?:>)?$/;
+    return emailWithNameRegex.test(email);
+}
+```
+
+## Rate Limits
+
+<Warning>
+Please contact support for information about rate limits for your API key.
+</Warning>
+
+## Next Steps
+
+- [Direct API Integration](./javascript-lib.mdx#direct-api)
+- [Client Library Usage](./javascript-lib.mdx)
+- [SMTP Integration](./javascript-smtp.mdx)
+
+## Support
+
+For additional support or questions, please contact our support team.

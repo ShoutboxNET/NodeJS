@@ -1,0 +1,252 @@
+---
+title: "JavaScript SMTP Integration"
+description: "Using the Shoutbox SMTP client with JavaScript"
+---
+
+# JavaScript SMTP Integration
+
+Our JavaScript SMTP client provides direct mail server integration for your applications.
+
+## Installation
+
+```bash
+npm install shoutboxnet
+# or
+yarn add shoutboxnet
+# or
+pnpm add shoutboxnet
+```
+
+## Using the SMTP Client
+
+### Basic Usage
+
+```javascript
+import { SMTPClient } from 'shoutboxnet';
+
+const smtp = new SMTPClient(process.env.SHOUTBOX_API_KEY);
+
+// Verify connection
+const isConnected = await smtp.verifyConnection();
+if (!isConnected) {
+    throw new Error('Failed to connect to SMTP server');
+}
+
+const emailOptions = {
+    from: 'sender@example.com',
+    to: 'recipient@example.com',
+    subject: 'Hello from SMTP!',
+    html: '<h1>Hello!</h1><p>This is a test email via SMTP.</p>'
+};
+
+try {
+    await smtp.sendEmail(emailOptions);
+    console.log('Email sent successfully');
+} catch (error) {
+    console.error('Failed to send email:', error);
+}
+```
+
+### With Multiple Recipients
+
+```javascript
+import { SMTPClient } from 'shoutboxnet';
+
+const smtp = new SMTPClient(process.env.SHOUTBOX_API_KEY);
+
+const emailOptions = {
+    from: 'sender@example.com',
+    to: ['recipient1@example.com', 'recipient2@example.com'],
+    subject: 'Group Announcement',
+    html: '<h1>Hello Team!</h1><p>This is a group announcement.</p>'
+};
+
+await smtp.sendEmail(emailOptions);
+```
+
+### With Attachments
+
+```javascript
+import { SMTPClient } from 'shoutboxnet';
+import { readFileSync } from 'fs';
+
+const smtp = new SMTPClient(process.env.SHOUTBOX_API_KEY);
+
+const attachment = {
+    filepath: './document.pdf',
+    filename: 'report.pdf',
+    contentType: 'application/pdf'
+};
+
+const emailOptions = {
+    from: 'sender@example.com',
+    to: 'recipient@example.com',
+    subject: 'Report Attached',
+    html: '<h1>Monthly Report</h1><p>Please find the report attached.</p>',
+    attachments: [attachment]
+};
+
+await smtp.sendEmail(emailOptions);
+```
+
+### With Custom Headers
+
+```javascript
+import { SMTPClient } from 'shoutboxnet';
+
+const smtp = new SMTPClient(process.env.SHOUTBOX_API_KEY);
+
+const emailOptions = {
+    from: 'sender@example.com',
+    to: 'recipient@example.com',
+    subject: 'Custom Headers Example',
+    html: '<h1>Hello!</h1>',
+    headers: {
+        'X-Custom-Header': 'custom-value',
+        'X-Campaign-ID': 'campaign-123'
+    }
+};
+
+await smtp.sendEmail(emailOptions);
+```
+
+### With CC Recipients
+
+```javascript
+import { SMTPClient } from 'shoutboxnet';
+
+const smtp = new SMTPClient(process.env.SHOUTBOX_API_KEY);
+
+const emailOptions = {
+    from: 'sender@example.com',
+    to: 'recipient@example.com',
+    cc: ['cc1@example.com', 'cc2@example.com'],
+    subject: 'CC Example',
+    html: '<h1>Hello!</h1><p>This email has CC recipients.</p>'
+};
+
+await smtp.sendEmail(emailOptions);
+```
+
+### Sending Multiple Emails
+
+```javascript
+import { SMTPClient } from 'shoutboxnet';
+
+const smtp = new SMTPClient(process.env.SHOUTBOX_API_KEY);
+
+const emails = [
+    {
+        from: 'sender@example.com',
+        to: 'recipient1@example.com',
+        subject: 'Email 1',
+        html: '<h1>First Email</h1>'
+    },
+    {
+        from: 'sender@example.com',
+        to: 'recipient2@example.com',
+        subject: 'Email 2',
+        html: '<h1>Second Email</h1>'
+    }
+];
+
+await smtp.sendEmails(emails);
+```
+
+## Error Handling
+
+```javascript
+import { SMTPClient } from 'shoutboxnet';
+
+const smtp = new SMTPClient(process.env.SHOUTBOX_API_KEY);
+
+async function sendEmailWithRetry(options, maxRetries = 3) {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+            // Verify connection before sending
+            const isConnected = await smtp.verifyConnection();
+            if (!isConnected) {
+                throw new Error('Failed to connect to SMTP server');
+            }
+
+            await smtp.sendEmail(options);
+            return;
+        } catch (error) {
+            if (attempt === maxRetries) {
+                throw error;
+            }
+            console.log(`Attempt ${attempt} failed, retrying...`);
+            await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+        }
+    }
+}
+
+// Usage
+try {
+    await sendEmailWithRetry({
+        from: 'sender@example.com',
+        to: 'recipient@example.com',
+        subject: 'Test with Retry',
+        html: '<h1>Hello!</h1>'
+    });
+} catch (error) {
+    console.error('All retry attempts failed:', error);
+}
+```
+
+## Request Structure
+
+### Email Options
+
+The email options object can include:
+
+- `from` (required): Sender email address
+- `to` (required): Recipient email address(es)
+- `subject` (required): Email subject line
+- `html` (optional): HTML content of the email
+- `text` (optional): Plain text content
+- `react` (optional): React Email component
+- `name` (optional): Sender name
+- `replyTo` (optional): Reply-to email address
+- `attachments` (optional): Array of attachment objects
+- `headers` (optional): Custom email headers
+- `cc` (optional): CC recipients
+
+### Attachment Structure
+
+Attachment objects can include:
+
+- `filename`: Name of the file
+- `filepath`: Path to the file
+- `contentType`: MIME type of the file
+- `content`: Base64 encoded content or Buffer
+
+## Environment Variables
+
+```javascript
+// .env
+SHOUTBOX_API_KEY=your-api-key-here
+
+// Usage
+import { config } from 'dotenv';
+import { SMTPClient } from 'shoutboxnet';
+
+config();
+
+const apiKey = process.env.SHOUTBOX_API_KEY;
+if (!apiKey) {
+    throw new Error('SHOUTBOX_API_KEY is required');
+}
+
+const smtp = new SMTPClient(apiKey);
+```
+
+## Rate Limits
+
+<Warning>
+Please contact support for information about rate limits for your API key.
+</Warning>
+
+## Support
+
+For additional support or questions, please contact our support team.

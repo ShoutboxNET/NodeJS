@@ -2,34 +2,41 @@ import { config } from "dotenv";
 import { EmailOptions, Attachment } from "./types";
 import { basename } from "path";
 import fs from "fs";
-import mime from 'mime-types';
-import { renderAsync } from "@react-email/render";
+import mime from "mime-types";
+import { render } from "@react-email/render";
+import { SMTPClient } from "./smtp";
 
 config(); // Ensure environment variables are loaded
 
 const API_ENDPOINT = "https://api.shoutbox.net/send";
 
+export { SMTPClient };
+
 export default class Shoutbox {
   private apiKey: string;
 
-  constructor(apiKey?: string) {
-    this.apiKey = apiKey || process.env.SHOUTBOX_API_KEY!;
-    if (!this.apiKey) {
+  constructor(apiKey?: string | null | undefined) {
+    // Handle undefined, null, or empty string cases
+    const key = apiKey === undefined ? process.env.SHOUTBOX_API_KEY : apiKey;
+
+    if (!key || (typeof key === "string" && key.trim() === "")) {
       throw new Error("API key is required for Shoutbox");
     }
+
+    this.apiKey = key;
   }
 
   private async send(options: EmailOptions): Promise<void> {
-    let extraHeaders: Record<string, string> = {}; 
+    let extraHeaders: Record<string, string> = {};
     if (options.headers) {
-      Object.entries(options.headers).forEach(([key, value]) =>
-        extraHeaders[key] = value
+      Object.entries(options.headers).forEach(
+        ([key, value]) => (extraHeaders[key] = value)
       );
       delete options.headers;
     }
 
     if (options.react) {
-      options.html = await renderAsync(options.react);
+      options.html = await render(options.react);
     }
 
     // Handle attachments
@@ -46,7 +53,7 @@ export default class Shoutbox {
       if (typeof e.content === "object") {
         e.content = e.content.toString("base64");
       }
-    };
+    }
 
     const emailContent = JSON.stringify(options);
     if (emailContent.length > 1024 * 1024) {
@@ -60,10 +67,10 @@ export default class Shoutbox {
         method: "POST",
         headers: {
           Authorization: `Bearer ${this.apiKey}`,
-          'Content-Type': "application/json",
-          ...extraHeaders
+          "Content-Type": "application/json",
+          ...extraHeaders,
         },
-        body: emailContent
+        body: emailContent,
       });
 
       if (response.ok) {

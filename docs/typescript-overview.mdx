@@ -1,0 +1,337 @@
+---
+title: "TypeScript Overview"
+description: "Simple, powerful email sending API with TypeScript client library"
+---
+
+# Email API TypeScript Client
+
+Simple, powerful email sending API with support for attachments, custom headers, and full TypeScript type safety.
+
+## Integration Methods
+
+Shoutbox.net provides multiple ways to send emails from your TypeScript applications:
+
+1. Direct API calls using fetch
+2. Using our TypeScript client library
+3. Using SMTP
+4. Next.js integration
+
+## Installation
+
+```bash
+npm install shoutboxnet
+# or
+yarn add shoutboxnet
+# or
+pnpm add shoutboxnet
+```
+
+## Quick Start with Direct API
+
+```typescript
+interface EmailRequest {
+  from: string;
+  to: string | string[];
+  subject: string;
+  html?: string;
+  text?: string;
+  name?: string;
+  replyTo?: string;
+  attachments?: Array<{
+    filename?: string;
+    filepath: string;
+    contentType?: string;
+    content?: string | Buffer;
+  }>;
+  headers?: Record<string, string>;
+  cc?: string | string[];
+}
+
+async function sendEmail(request: EmailRequest): Promise<void> {
+    try {
+        const response = await fetch('https://api.shoutbox.net/send', {
+            method: 'POST',
+            headers: {
+                'Authorization': 'Bearer YOUR_API_KEY',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(request)
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+    } catch (error) {
+        console.error('Error sending email:', error);
+        throw error;
+    }
+}
+```
+
+## Client Class Setup
+
+Create a reusable client class with TypeScript types:
+
+```typescript
+interface ClientOptions {
+    baseURL?: string;
+    timeout?: number;
+}
+
+class ShoutboxClient {
+    private apiKey: string;
+    private baseURL: string;
+    private timeout: number;
+
+    constructor(apiKey: string, options: ClientOptions = {}) {
+        this.apiKey = apiKey;
+        this.baseURL = options.baseURL || 'https://api.shoutbox.net';
+        this.timeout = options.timeout || 10000;
+    }
+
+    async sendEmail(emailRequest: EmailRequest): Promise<any> {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+
+        try {
+            const response = await fetch(`${this.baseURL}/send`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${this.apiKey}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(emailRequest),
+                signal: controller.signal
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            return await response.json();
+        } catch (error) {
+            if (error instanceof Error && error.name === 'AbortError') {
+                throw new Error('Request timed out');
+            }
+            throw error;
+        } finally {
+            clearTimeout(timeoutId);
+        }
+    }
+}
+```
+
+## Type Definitions
+
+```typescript
+interface EmailRequest {
+    from: string;
+    to: string | string[];
+    subject: string;
+    html?: string;
+    text?: string;
+    name?: string;
+    replyTo?: string;
+    attachments?: Attachment[];
+    headers?: Record<string, string>;
+    cc?: string | string[];
+}
+
+interface Attachment {
+    filename?: string;
+    filepath: string;
+    contentType?: string;
+    content?: string | Buffer;
+}
+```
+
+## Basic Request Structure
+
+| Field      | Type                | Required | Description                 |
+| ---------- | ------------------- | -------- | --------------------------- |
+| `from`     | string             | Yes      | Sender email address        |
+| `to`       | string \| string[] | Yes      | Recipient email address(es) |
+| `subject`  | string             | Yes      | Email subject line          |
+| `html`     | string             | No       | HTML content of the email   |
+| `text`     | string             | No       | Plain text content          |
+| `name`     | string             | No       | Sender name                 |
+| `replyTo`  | string             | No       | Reply-to email address      |
+
+## Recipients
+
+### Multiple Recipients
+
+```typescript
+const client = new ShoutboxClient(process.env.SHOUTBOX_API_KEY);
+
+const request: EmailRequest = {
+    from: "no-reply@yourdomain.com",
+    to: ["user1@example.com", "user2@example.com"],
+    subject: "Team Update",
+    html: "<h1>Important Announcement</h1>"
+};
+
+try {
+    await client.sendEmail(request);
+} catch (error) {
+    console.error('Failed to send email:', error);
+}
+```
+
+### Named Recipients
+
+```typescript
+const request: EmailRequest = {
+    from: "no-reply@yourdomain.com",
+    to: "John Doe <john@example.com>,Jane Smith <jane@example.com>",
+    subject: "Team Meeting",
+    html: "<h1>Meeting Invitation</h1>"
+};
+
+try {
+    await client.sendEmail(request);
+} catch (error) {
+    console.error('Failed to send email:', error);
+}
+```
+
+## Security Best Practices
+
+### API Key Management
+
+Use environment variables for API keys:
+
+```typescript
+// Node.js
+const apiKey = process.env.SHOUTBOX_API_KEY;
+if (!apiKey) {
+    throw new Error('SHOUTBOX_API_KEY environment variable is not set');
+}
+
+// Browser (use server-side proxy)
+class SecureShoutboxClient {
+    async sendEmail(request: EmailRequest): Promise<any> {
+        const response = await fetch('/api/send-email', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(request)
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to send email');
+        }
+        
+        return response.json();
+    }
+}
+```
+
+### Error Handling with Retries
+
+```typescript
+class RetryableShoutboxClient extends ShoutboxClient {
+    async sendEmailWithRetry(
+        request: EmailRequest, 
+        maxRetries: number = 3, 
+        delay: number = 1000
+    ): Promise<any> {
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                return await this.sendEmail(request);
+            } catch (error) {
+                if (attempt === maxRetries) throw error;
+                
+                if (error instanceof Error && 
+                    (error.name === 'AbortError' || 
+                     error.message.includes('network error'))) {
+                    await new Promise(resolve => setTimeout(resolve, delay * attempt));
+                    continue;
+                }
+                
+                throw error;
+            }
+        }
+    }
+}
+```
+
+### Rate Limiting
+
+```typescript
+interface QueueItem {
+    request: EmailRequest;
+    resolve: (value: any) => void;
+    reject: (reason?: any) => void;
+}
+
+class RateLimitedClient extends ShoutboxClient {
+    private rateLimit: number;
+    private queue: QueueItem[];
+    private processing: boolean;
+
+    constructor(apiKey: string, options: ClientOptions & { rateLimit?: number } = {}) {
+        super(apiKey, options);
+        this.rateLimit = options.rateLimit || 10; // requests per second
+        this.queue = [];
+        this.processing = false;
+    }
+
+    async sendEmail(request: EmailRequest): Promise<any> {
+        return new Promise((resolve, reject) => {
+            this.queue.push({ request, resolve, reject });
+            this.processQueue();
+        });
+    }
+
+    private async processQueue(): Promise<void> {
+        if (this.processing || this.queue.length === 0) return;
+        
+        this.processing = true;
+        const { request, resolve, reject } = this.queue.shift()!;
+        
+        try {
+            const result = await super.sendEmail(request);
+            resolve(result);
+        } catch (error) {
+            reject(error);
+        } finally {
+            this.processing = false;
+            setTimeout(() => this.processQueue(), 1000 / this.rateLimit);
+        }
+    }
+}
+```
+
+### Email Validation
+
+```typescript
+function validateEmail(email: string): boolean {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+}
+
+function validateEmailWithName(email: string): boolean {
+    // Matches "Name <email@domain.com>" or "email@domain.com"
+    const emailWithNameRegex = /^(?:"?([^"]*)"?\s)?(?:<)?([^\s@]+@[^\s@]+\.[^\s@]+)(?:>)?$/;
+    return emailWithNameRegex.test(email);
+}
+```
+
+## Rate Limits
+
+<Warning>
+Please contact support for information about rate limits for your API key.
+</Warning>
+
+## Next Steps
+
+- [Direct API Integration](./typescript-lib.mdx#direct-api)
+- [Client Library Usage](./typescript-lib.mdx)
+- [SMTP Integration](./typescript-smtp.mdx)
+- [Next.js Setup](./typescript.mdx#nextjs-integration)
+
+## Support
+
+For additional support or questions, please contact our support team.

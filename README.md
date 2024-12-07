@@ -1,177 +1,267 @@
 # Shoutbox.net Developer API
 
-Shoutbox.net is a Developer API designed to send transactional emails at scale. This library provides a simple and efficient way to interact with the Shoutbox API, making it easy to integrate email functionalities into your application.
+Shoutbox.net is a Developer API designed to send transactional emails at scale. This documentation covers all integration methods, from direct API calls to framework integration.
 
-## Installation
+## Integration Methods
 
-You can install the `shoutboxnet` package using npm, yarn, or pnpm.
+There are three main ways to integrate with Shoutbox:
 
-### Using npm
+1. Direct API calls using fetch()
+2. Using our Node.js client
+3. Using SMTP
+4. Next.js integration
+
+## 1. Direct API Integration (Using fetch)
+
+If you want to make direct API calls without any dependencies:
+
+```javascript
+const apiKey = 'your-api-key-here';
+
+const emailData = {
+    from: 'sender@example.com',
+    to: 'recipient@example.com',
+    subject: 'Test Email',
+    html: '<h1>Hello!</h1><p>This is a test email.</p>',
+    name: 'Sender Name',
+    replyTo: 'reply@example.com'
+};
+
+async function sendEmail() {
+    try {
+        const response = await fetch('https://api.shoutbox.net/send', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${apiKey}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(emailData)
+        });
+
+        if (response.ok) {
+            console.log('Email sent successfully!');
+        } else {
+            console.error('Failed to send email:', await response.text());
+        }
+    } catch (error) {
+        console.error('Error sending email:', error);
+    }
+}
+
+sendEmail();
+```
+
+## 2. Node.js Client Usage
+
+### Installation
 
 ```bash
 npm install shoutboxnet
 ```
 
-### Using yarn
+### Basic Usage
+
+```typescript
+import Shoutbox from "shoutboxnet";
+
+const client = new Shoutbox('your-api-key');
+
+async function sendEmail() {
+    await client.sendEmail({
+        from: 'sender@example.com',
+        to: 'recipient@example.com',
+        subject: 'Test Email',
+        html: '<h1>Hello!</h1><p>This is a test email.</p>',
+        name: 'Sender Name',
+        replyTo: 'reply@example.com'
+    });
+}
+
+sendEmail();
+```
+
+## 3. SMTP Integration
+
+For SMTP integration, use our SMTPClient:
+
+```typescript
+import { SMTPClient } from "shoutboxnet";
+
+const smtp = new SMTPClient('your-api-key');
+
+async function sendEmailViaSMTP() {
+    // Verify connection first
+    const isConnected = await smtp.verifyConnection();
+    if (!isConnected) {
+        console.error('Failed to connect to SMTP server');
+        return;
+    }
+
+    // Send email
+    await smtp.sendEmail({
+        from: 'sender@example.com',
+        to: 'recipient@example.com',
+        subject: 'SMTP Test',
+        html: '<h1>Hello!</h1><p>This is a test email via SMTP.</p>',
+        name: 'Sender Name',
+        replyTo: 'reply@example.com'
+    });
+}
+
+sendEmailViaSMTP();
+```
+
+## 4. Next.js Integration
+
+### Installation
 
 ```bash
-yarn add shoutboxnet
+npm install shoutboxnet
 ```
 
-### Using pnpm
+### Setup
+
+1. Create an API route in `pages/api/send-email.ts`:
+
+```typescript
+import type { NextApiRequest, NextApiResponse } from 'next';
+import Shoutbox from 'shoutboxnet';
+
+// Initialize client outside handler to reuse connection
+const client = new Shoutbox(process.env.SHOUTBOX_API_KEY!);
+
+export default async function handler(
+    req: NextApiRequest,
+    res: NextApiResponse
+) {
+    if (req.method !== 'POST') {
+        return res.status(405).json({ message: 'Method not allowed' });
+    }
+
+    try {
+        const { from, to, subject, html } = req.body;
+
+        await client.sendEmail({
+            from,
+            to,
+            subject,
+            html
+        });
+
+        res.status(200).json({ message: 'Email sent successfully' });
+    } catch (error) {
+        console.error('Error sending email:', error);
+        res.status(500).json({ message: 'Failed to send email' });
+    }
+}
+```
+
+2. Add your API key to `.env.local`:
 
 ```bash
-pnpm add shoutboxnet
+SHOUTBOX_API_KEY=your-api-key-here
 ```
 
-## Usage
-
-To use the `shoutboxnet` library, you need to have an API key from Shoutbox.net. You can pass this key directly to the Shoutbox class or set it as an environment variable (`SHOUTBOX_API_KEY`).
-
-### Sending a Simple Email
-
-Here's an example of sending a basic email:
+3. Use in your components:
 
 ```typescript
-import Shoutbox from "shoutboxnet";
+'use client';
 
-const shoutbox = new Shoutbox();
+import { useState } from 'react';
 
-(async () => {
-  await shoutbox.sendEmail({
-    name: "Vlad",
-    from: "no-reply@shoutbox.net",
-    to: "test@example.com",
-    subject: "A question about the meetup",
-    html: "<b>Hi, Are you still going to that meetup?</b>",
-  });
-})();
+export default function ContactForm() {
+    const [status, setStatus] = useState('');
+
+    async function handleSubmit(e: React.FormEvent) {
+        e.preventDefault();
+        setStatus('Sending...');
+
+        try {
+            const res = await fetch('/api/send-email', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    from: 'your-app@example.com',
+                    to: 'recipient@example.com',
+                    subject: 'New Contact Form Submission',
+                    html: '<h1>New Contact</h1><p>You have a new contact form submission.</p>'
+                }),
+            });
+
+            if (res.ok) {
+                setStatus('Email sent successfully!');
+            } else {
+                setStatus('Failed to send email');
+            }
+        } catch (error) {
+            setStatus('Error sending email');
+            console.error('Error:', error);
+        }
+    }
+
+    return (
+        <form onSubmit={handleSubmit}>
+            <button type="submit">Send Email</button>
+            {status && <p>{status}</p>}
+        </form>
+    );
+}
 ```
 
-### Sending an Email with Attachments
+### Server Actions (Next.js 14+)
 
-You can also send emails with attachments:
+If you're using Server Actions in Next.js 14 or later, you can send emails directly from your server components:
 
 ```typescript
-import Shoutbox from "shoutboxnet";
+// app/actions.ts
+'use server';
 
-const shoutbox = new Shoutbox();
+import Shoutbox from 'shoutboxnet';
 
-(async () => {
-  await shoutbox.sendEmail({
-    name: "Vlad",
-    from: "no-reply@shoutbox.net",
-    to: "test@example.com",
-    subject: "A question about the meetup",
-    html: "<b>Hi, Are you still going to that meetup?</b>",
-    attachments: [
-      {
-        filepath: "./examples/important.txt",
-      },
-    ],
-  });
-})();
+const client = new Shoutbox(process.env.SHOUTBOX_API_KEY!);
+
+export async function sendEmail(formData: FormData) {
+    try {
+        await client.sendEmail({
+            from: 'your-app@example.com',
+            to: formData.get('email') as string,
+            subject: 'New Contact Form Submission',
+            html: '<h1>New Contact</h1><p>You have a new contact form submission.</p>'
+        });
+        return { success: true };
+    } catch (error) {
+        console.error('Error sending email:', error);
+        return { success: false, error: 'Failed to send email' };
+    }
+}
+
+// app/page.tsx
+import { sendEmail } from './actions';
+
+export default function ContactPage() {
+    return (
+        <form action={sendEmail}>
+            <input type="email" name="email" required />
+            <button type="submit">Send Email</button>
+        </form>
+    );
+}
 ```
-
-### Sending an Email with CC
-
-You can include CC recipients as well:
-
-```typescript
-import Shoutbox from "shoutboxnet";
-
-const shoutbox = new Shoutbox();
-
-(async () => {
-  await shoutbox.sendEmail({
-    name: "Vlad",
-    from: "no-reply@shoutbox.net",
-    to: "test@example.com",
-    subject: "A question about
-
-the meetup",
-    html: "<b>Hi, Are you still going to that meetup?</b>",
-    cc: "tycho@shoutbox.net",
-  });
-})();
-```
-
-## EmailOptions Interface
-
-The `EmailOptions` interface allows you to customize your email. Below are the properties you can set:
-
-- **from** (string): The sender's email address (required).
-- **name** (string): The sender's name (optional).
-- **to** (string | string[]): The recipient's email address(es) (required).
-- **subject** (string): The subject of the email (required).
-- **html** (string): The HTML content of the email (optional).
-- **text** (string): The plain text content of the email (optional).
-- **react** (React Email Component): A React Email Component which will be converted to a HTML template
-- **attachments** (Attachment[]): An array of attachment objects (optional).
-- **replyTo** (string): The email address for replies (optional).
-- **tags** (Record<string, string>): A record of tags (optional).
-- **headers** (Record<string, string>): Custom headers for the email (optional).
-- **cc** (string | string[]): CC recipients (optional).
-
-### Attachment Interface
-
-The `Attachment` interface allows you to attach files to your emails:
-
-- **filename** (string): The name of the file (optional).
-- **filepath** (string): The file path of the attachment (required).
-- **contentType** (string): The MIME type of the attachment (optional).
-- **content** (string | Buffer): The Base64 encoded content of the attachment (optional).
 
 ## Environment Variables
 
-To avoid hardcoding your API key, you can set it as an environment variable:
+Required environment variables:
 
 ```bash
-export SHOUTBOX_API_KEY=your_api_key
+SHOUTBOX_API_KEY=your-api-key-here
 ```
 
 ## Development
 
-If you want to develop on this package, follow these steps:
-
-1. Clone the repository:
-
-```bash
-git clone https://github.com/yourusername/shoutboxnet.git
-```
-
-2. Navigate to the project directory:
-
-```bash
-cd shoutboxnet
-```
-
-3. Install the dependencies:
-
-```bash
-npm install
-```
-
-4. Run the tests:
-
-```bash
-npm test
-```
-
-You can make changes to the source code and run the tests to ensure everything works as expected.
+For development and testing, see our [development guide](docs/development.md).
 
 ## License
 
-This library is licensed under the MIT License. See the [LICENSE](LICENSE) file for more details.
-
-## Contributing
-
-We welcome contributions! Please submit a pull request or open an issue to discuss your changes.
-
-## Support
-
-If you have any questions or need help, feel free to open an issue on GitHub.
-
----
-
-By following this guide, you should be able to successfully integrate and use the Shoutbox.net Developer API to send transactional emails at scale. For more examples and detailed information, refer to the source code and documentation provided in this repository.
+This library is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.

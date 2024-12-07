@@ -1,0 +1,268 @@
+---
+title: "TypeScript Client Library"
+description: "Using the Shoutbox TypeScript client library"
+---
+
+# TypeScript Client Library
+
+Our TypeScript client library provides a fully typed interface for sending emails through Shoutbox.net.
+
+## Installation
+
+```bash
+npm install shoutboxnet
+# or
+yarn add shoutboxnet
+# or
+pnpm add shoutboxnet
+```
+
+## Using the Client Library
+
+### Basic Usage
+
+```typescript
+import Shoutbox from 'shoutboxnet';
+import { EmailOptions } from 'shoutboxnet';
+
+const client = new Shoutbox(process.env.SHOUTBOX_API_KEY);
+
+const emailOptions: EmailOptions = {
+    from: 'sender@example.com',
+    to: 'recipient@example.com',
+    subject: 'Hello from TypeScript!',
+    html: '<h1>Hello!</h1><p>This is a test email.</p>'
+};
+
+try {
+    await client.sendEmail(emailOptions);
+    console.log('Email sent successfully');
+} catch (error) {
+    console.error('Failed to send email:', error);
+}
+```
+
+### With Multiple Recipients
+
+```typescript
+import Shoutbox, { EmailOptions } from 'shoutboxnet';
+
+const client = new Shoutbox(process.env.SHOUTBOX_API_KEY);
+
+const emailOptions: EmailOptions = {
+    from: 'sender@example.com',
+    to: ['recipient1@example.com', 'recipient2@example.com'],
+    subject: 'Group Announcement',
+    html: '<h1>Hello Team!</h1><p>This is a group announcement.</p>'
+};
+
+await client.sendEmail(emailOptions);
+```
+
+### With Attachments
+
+```typescript
+import Shoutbox, { EmailOptions, Attachment } from 'shoutboxnet';
+import { readFileSync } from 'fs';
+
+const client = new Shoutbox(process.env.SHOUTBOX_API_KEY);
+
+const attachment: Attachment = {
+    filepath: './document.pdf',
+    filename: 'report.pdf',
+    contentType: 'application/pdf'
+};
+
+const emailOptions: EmailOptions = {
+    from: 'sender@example.com',
+    to: 'recipient@example.com',
+    subject: 'Report Attached',
+    html: '<h1>Monthly Report</h1><p>Please find the report attached.</p>',
+    attachments: [attachment]
+};
+
+await client.sendEmail(emailOptions);
+```
+
+### With Custom Headers
+
+```typescript
+import Shoutbox, { EmailOptions } from 'shoutboxnet';
+
+const client = new Shoutbox(process.env.SHOUTBOX_API_KEY);
+
+const emailOptions: EmailOptions = {
+    from: 'sender@example.com',
+    to: 'recipient@example.com',
+    subject: 'Custom Headers Example',
+    html: '<h1>Hello!</h1>',
+    headers: {
+        'X-Custom-Header': 'custom-value',
+        'X-Campaign-ID': 'campaign-123'
+    }
+};
+
+await client.sendEmail(emailOptions);
+```
+
+### With CC Recipients
+
+```typescript
+import Shoutbox, { EmailOptions } from 'shoutboxnet';
+
+const client = new Shoutbox(process.env.SHOUTBOX_API_KEY);
+
+const emailOptions: EmailOptions = {
+    from: 'sender@example.com',
+    to: 'recipient@example.com',
+    cc: ['cc1@example.com', 'cc2@example.com'],
+    subject: 'CC Example',
+    html: '<h1>Hello!</h1><p>This email has CC recipients.</p>'
+};
+
+await client.sendEmail(emailOptions);
+```
+
+### Sending Multiple Emails
+
+```typescript
+import Shoutbox, { EmailOptions } from 'shoutboxnet';
+
+const client = new Shoutbox(process.env.SHOUTBOX_API_KEY);
+
+const emails: EmailOptions[] = [
+    {
+        from: 'sender@example.com',
+        to: 'recipient1@example.com',
+        subject: 'Email 1',
+        html: '<h1>First Email</h1>'
+    },
+    {
+        from: 'sender@example.com',
+        to: 'recipient2@example.com',
+        subject: 'Email 2',
+        html: '<h1>Second Email</h1>'
+    }
+];
+
+await client.sendEmails(emails);
+```
+
+### With React Email Templates
+
+```typescript
+import Shoutbox, { EmailOptions } from 'shoutboxnet';
+import { WelcomeTemplate } from './emails/WelcomeTemplate';
+
+const client = new Shoutbox(process.env.SHOUTBOX_API_KEY);
+
+const emailOptions: EmailOptions = {
+    from: 'sender@example.com',
+    to: 'recipient@example.com',
+    subject: 'Welcome!',
+    react: <WelcomeTemplate name="John" />
+};
+
+await client.sendEmail(emailOptions);
+```
+
+## Error Handling
+
+```typescript
+import Shoutbox, { EmailOptions } from 'shoutboxnet';
+
+const client = new Shoutbox(process.env.SHOUTBOX_API_KEY);
+
+async function sendEmailWithRetry(options: EmailOptions, maxRetries: number = 3): Promise<void> {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+            await client.sendEmail(options);
+            return;
+        } catch (error) {
+            if (attempt === maxRetries) {
+                throw error;
+            }
+            console.log(`Attempt ${attempt} failed, retrying...`);
+            await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+        }
+    }
+}
+
+// Usage
+try {
+    await sendEmailWithRetry({
+        from: 'sender@example.com',
+        to: 'recipient@example.com',
+        subject: 'Test with Retry',
+        html: '<h1>Hello!</h1>'
+    });
+} catch (error) {
+    console.error('All retry attempts failed:', error);
+}
+```
+
+## Type Definitions
+
+### EmailOptions Interface
+
+```typescript
+interface EmailOptions {
+    from: string;
+    to: string | string[];
+    subject: string;
+    html?: string;
+    text?: string;
+    react?: React.ReactElement;
+    name?: string;
+    replyTo?: string;
+    attachments?: Attachment[];
+    headers?: Record<string, string>;
+    cc?: string | string[];
+}
+```
+
+### Attachment Interface
+
+```typescript
+interface Attachment {
+    filename?: string;
+    filepath: string;
+    contentType?: string;
+    content?: string | Buffer;
+}
+```
+
+## Environment Variables
+
+```typescript
+// .env
+SHOUTBOX_API_KEY=your-api-key-here
+
+// Usage
+import { config } from 'dotenv';
+import Shoutbox from 'shoutboxnet';
+
+config();
+
+const apiKey = process.env.SHOUTBOX_API_KEY;
+if (!apiKey) {
+    throw new Error('SHOUTBOX_API_KEY is required');
+}
+
+const client = new Shoutbox(apiKey);
+```
+
+## Rate Limits
+
+<Warning>
+Please contact support for information about rate limits for your API key.
+</Warning>
+
+## Next Steps
+
+- [SMTP Integration](./typescript-smtp.mdx)
+- [Next.js Integration](./typescript.mdx#nextjs-integration)
+
+## Support
+
+For additional support or questions, please contact our support team.
