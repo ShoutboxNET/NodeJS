@@ -35,6 +35,9 @@ test:
 	npm test -- 
 	#--testPathIgnorePatterns=react.test.tsx
 
+test-attachments:
+	npm test -- -t "should handle email with attachments"
+
 test-react:
 	tsx src/__tests__/react.test.tsx
 

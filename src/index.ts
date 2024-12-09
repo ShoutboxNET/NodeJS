@@ -8,7 +8,8 @@ import { SMTPClient } from "./smtp";
 
 config(); // Ensure environment variables are loaded
 
-const API_ENDPOINT = "https://api.shoutbox.net/send";
+const API_ENDPOINT =
+  process.env.SHOUTBOX_API_ENDPOINT ?? "https://api.shoutbox.net/send";
 
 export { SMTPClient };
 
@@ -29,10 +30,10 @@ export default class Shoutbox {
   private cleanRenderedHtml(html: string): string {
     // Remove DOCTYPE, html envelope tags, and the $ /$ markers
     return html
-      .replace(/<!DOCTYPE[^>]*>/i, '')
-      .replace(/<\/?html[^>]*>/gi, '')
-      .replace(/\$<|>\$\//g, '<')  // Replace $< and >$/ with just <
-      .replace(/\$|\/\$/g, '')     // Remove any remaining $ and /$ markers
+      .replace(/<!DOCTYPE[^>]*>/i, "")
+      .replace(/<\/?html[^>]*>/gi, "")
+      .replace(/\$<|>\$\//g, "<") // Replace $< and >$/ with just <
+      .replace(/\$|\/\$/g, "") // Remove any remaining $ and /$ markers
       .trim();
   }
 

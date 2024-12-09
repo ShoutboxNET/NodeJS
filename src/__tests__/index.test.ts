@@ -1,8 +1,8 @@
 import Shoutbox from "../index";
 import { config } from "dotenv";
 import path from "path";
-import { jest } from "@jest/globals"; 
-import { describe, test, expect, beforeAll } from "@jest/globals"; 
+import { jest } from "@jest/globals";
+import { describe, test, expect, beforeAll } from "@jest/globals";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
 
@@ -129,6 +129,21 @@ describe("Shoutbox", () => {
           filepath: path.join(__dirname, "../../examples/important.txt"),
           filename: "test.txt",
           contentType: "text/plain",
+        },
+      ],
+    });
+
+    await client.sendEmail({
+      from,
+      to,
+      subject: "Test Email with Excel Attachment",
+      html: "<h1>Test</h1><p>This is a test email with attachments.</p>",
+      attachments: [
+        {
+          filepath: path.join(__dirname, "../../examples/test.xlsx"),
+          filename: "text.xlsx",
+          contentType:
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         },
       ],
     });
