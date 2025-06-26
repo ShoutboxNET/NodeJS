@@ -1,4 +1,4 @@
-![Header](https://github-production-user-asset-6210df.s3.amazonaws.com/623448/459285874-52d6ff91-3425-4e31-bff3-426bbb6eb113.png)
+![Header](https://github.com/user-attachments/assets/52d6ff91-3425-4e31-bff3-426bbb6eb113)
 
 <p align="center">
   <a href="https://docs.shoutbox.net/quickstart" style="font-size: 2em; text-decoration: underline; color: #0366d6;">Quickstart Docs</a>
